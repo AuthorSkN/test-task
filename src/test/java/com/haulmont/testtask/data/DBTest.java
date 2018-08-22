@@ -1,6 +1,5 @@
-package data;
+package com.haulmont.testtask.data;
 
-import com.google.gwt.thirdparty.guava.common.annotations.VisibleForTesting;
 import org.junit.Test;
 
 import java.sql.*;
@@ -30,20 +29,20 @@ public class DBTest {
         try {
             Statement statement = connection.createStatement();
             // создаем таблицу со столбцами id и value.
-            String query = "CREATE TABL mytable (id IDENTITY , value VARCHAR(32))";
+            String query = "CREATE TABLE mytable (id IDENTITY , value VARCHAR(32))";
             try {
                 statement.executeUpdate(query);
             } catch (SQLException e) {
                 // если таблица уже существует, будет исключение, игнорируем его.
                 int a = 0;
             }
-            // добавляю записи в таблицу.
+            /*// добавляю записи в таблицу.
             query = "INSERT INTO mytable (value) VALUES('Киев')";
             statement.executeUpdate(query);
             query = "INSERT INTO mytable (value) VALUES('Минск')";
             statement.executeUpdate(query);
             query = "INSERT INTO mytable (value) VALUES('Москва')";
-            statement.executeUpdate(query);
+            statement.executeUpdate(query);*/
 
             // достаю записи из таблицы
             query = "SELECT id, value FROM mytable";
@@ -58,7 +57,6 @@ public class DBTest {
             //отключаюсь от БД
             query = "SHUTDOWN";
             statement.execute(query);
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
