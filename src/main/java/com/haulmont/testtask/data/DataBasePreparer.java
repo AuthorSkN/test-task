@@ -8,6 +8,9 @@ import java.sql.SQLException;
 
 public final class DataBasePreparer extends DAO {
 
+    private static final String TABLE_ALREADY_CREATED_CODE = "42504";
+    private static final int TABLE_COUNT = 5;
+
     private static final String PATIENT_TABLE_CREATE_QUERY = "CREATE TABLE patient " +
             "(patient_id BIGINT PRIMARY KEY NOT NULL, " +
             "name VARCHAR(50) NOT NULL," +
@@ -43,28 +46,57 @@ public final class DataBasePreparer extends DAO {
             "priority_id BIGINT REFERENCES recipe_priority(priority_id)" +
             ")";
 
-    private void createTable(String tableQuery) throws MedicamentsSystemException {
-        Connection connection = getConnection();
-        try {
+    private final String path;
+
+    public DataBasePreparer(String dbPath) {
+        super(dbPath);
+        this.path = dbPath;
+    }
+
+    private boolean createTable(String tableQuery) throws MedicamentsSystemException {
+
+        boolean isCreated = true;
+        /*try {
             connection.createStatement().executeQuery(tableQuery);
         } catch (SQLException exc) {
-            exc.printStackTrace();
+            if (TABLE_ALREADY_CREATED_CODE.equals(exc.getSQLState())) {
+                isCreated = false;
+            } else {
+                exc.printStackTrace();
+                throw new MedicamentsSystemException("Create table exception.");
+            }
         } finally {
             connectionClose(connection);
-        }
+        }*/
+        return isCreated;
     }
 
-    //todo рассмотреть кейсы: отсутствия базы, отсутствия нескольких таблиц, наличия полной базы
     public void createDB() throws MedicamentsSystemException {
-        createTable(PATIENT_TABLE_CREATE_QUERY);
-        createTable(DOCTOR_SPECIALIZATION_TABLE_CREATE_QUERY);
-        createTable(RECIPE_PRIORITY_TABLE_CREATE_QUERY);
-        createTable(DOCTOR_TABLE_CREATE_QUERY);
-        createTable(RECIPE_TABLE_CREATE_QUERY);
+        int createdTableCount = 0;
+        if (createTable(PATIENT_TABLE_CREATE_QUERY)) {
+            createdTableCount++;
+        }
+        if (createTable(DOCTOR_SPECIALIZATION_TABLE_CREATE_QUERY)) {
+            createdTableCount++;
+        }
+        if (createTable(RECIPE_PRIORITY_TABLE_CREATE_QUERY)) {
+            createdTableCount++;
+        }
+        if (createTable(DOCTOR_TABLE_CREATE_QUERY)) {
+            createdTableCount++;
+        }
+        if (createTable(RECIPE_TABLE_CREATE_QUERY)) {
+            createdTableCount++;
+        }
+        if ((createdTableCount > 0)&&(createdTableCount < TABLE_COUNT)) {
+            throw new MedicamentsSystemException("Database has incorrect data.");
+        }
+
+
     }
 
-    public void filling() {
-        Connection connection = getConnection();
+   /* public void filling() {
+        Connection connection = getSession();
         try {
             connection.createStatement().executeQuery("INSERT INTO patient(patient_id, name, family_name) values(0,'Николай', 'Складнев')");
             connection.createStatement().executeQuery("INSERT INTO specialization(specialization_id, name) values(0,'Хирург'),(1, 'Терапевт')");
@@ -79,7 +111,7 @@ public final class DataBasePreparer extends DAO {
     }
 
     public void show() {
-        Connection connection = getConnection();
+        Connection connection = getSession();
         try {
             ResultSet resultSet = connection.createStatement().executeQuery("Select recipe.desc, doctor.name, recipe.start_date, specialization.name " +
                     "From doctor join recipe on doctor.doctor_id=recipe.doctor_id join specialization on doctor.specialization_id=specialization.specialization_id");
@@ -92,5 +124,5 @@ public final class DataBasePreparer extends DAO {
         } finally {
             connectionClose(connection);
         }
-    }
+    }*/
 }

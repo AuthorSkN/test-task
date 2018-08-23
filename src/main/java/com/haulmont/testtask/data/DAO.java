@@ -1,40 +1,54 @@
 package com.haulmont.testtask.data;
 
-import com.haulmont.testtask.exceptions.MedicamentsSystemException;
 
-import javax.sql.ConnectionPoolDataSource;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
 
-public abstract class DAO {
 
-    private static final String DB_PATH = "jdbc:hsqldb:file:database/Medicaments";
-    private static final String USER_NAME = "admin";
-    private static final String PASSWORD = "%22authoR61";
+public abstract class DAO<T> {
 
     private static final String SHUTDOWN_QUERY = "SHUTDOWN";
 
-    protected Connection getConnection() throws MedicamentsSystemException {
-        Connection connection = null;
-        try {
-            connection = DriverManager.getConnection(DB_PATH, USER_NAME, PASSWORD);
-        } catch (SQLException exc) {
-            System.err.println("Attempt connecting to database is failed.");
-            exc.printStackTrace();
-            throw new MedicamentsSystemException();
-        }
-        return connection;
+    protected static SessionFactory sessionFactory;
+
+    /**
+     * Инициализирует соединение с базой
+     */
+    public static void init() {
+        sessionFactory = new Configuration().configure().buildSessionFactory();
     }
 
-    protected void connectionClose(Connection connection) throws MedicamentsSystemException {
-        try {
-            connection.createStatement().executeQuery(SHUTDOWN_QUERY);
-            connection.close();
-        } catch (SQLException exc) {
-            exc.printStackTrace();
-            throw new MedicamentsSystemException();
-        }
+    /**
+     * Выполняет полный обрыв соединения с базой, сохраняет все измения
+     */
+    public static void closeDB() {
+        Session session = sessionFactory.openSession();
+        session.beginTransaction();
+        session.createSQLQuery(SHUTDOWN_QUERY);
+        session.getTransaction().commit();
+        session.close();
+        sessionFactory.close();
     }
+
+    /**
+     * Activity - сессия с активной транзакцией
+     * @return активная сессия
+     */
+   protected Session beginActivity() {
+        Session session = sessionFactory.openSession();
+        session.beginTransaction();
+        return session;
+   }
+
+    /**
+     * Выполняет коммит активности и закрывает сессию
+     * @param activity активная сессия
+     */
+   protected void commit(Session activity) {
+        activity.getTransaction().commit();
+        activity.close();
+   }
+
+
 }
