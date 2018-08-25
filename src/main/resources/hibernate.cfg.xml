@@ -11,5 +11,11 @@
         <property name="hibernate.connection.username">admin</property>
         <property name="hibernate.connection.password">%22authoR61</property>
 
+        <mapping class="com.haulmont.testtask.data.entity.RecipePriority"/>
+        <mapping class="com.haulmont.testtask.data.entity.Specialization"/>
+        <mapping class="com.haulmont.testtask.data.entity.Patient"/>
+        <mapping class="com.haulmont.testtask.data.entity.Doctor"/>
+        <mapping class="com.haulmont.testtask.data.entity.Recipe"/>
+
     </session-factory>
 </hibernate-configuration>

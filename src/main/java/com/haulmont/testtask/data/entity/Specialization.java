@@ -5,9 +5,10 @@ import java.util.Set;
 
 @Entity
 @Table(name="specialization")
-public class Specialization {
+public class Specialization implements Identifiable{
 
     @Id
+    @GeneratedValue(strategy=GenerationType.TABLE)
     @Column(name="specialization_id")
     private Long specializationId;
     @Column(name="name")
@@ -16,11 +17,17 @@ public class Specialization {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "doctorId")
     private Set<Doctor> doctors;
 
-    public Long getSpecializationId() {
+    public Specialization(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public Long getId() {
         return specializationId;
     }
 
-    public void setSpecializationId(Long specializationId) {
+    @Override
+    public void setId(Long specializationId) {
         this.specializationId = specializationId;
     }
 

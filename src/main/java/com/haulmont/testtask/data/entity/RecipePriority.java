@@ -7,9 +7,10 @@ import java.util.Set;
 
 @Entity
 @Table(name="recipe_priority")
-public class RecipePriority {
+public class RecipePriority implements Identifiable{
 
     @Id
+    @GeneratedValue(strategy=GenerationType.TABLE)
     @Column(name="priority_id")
     private Long priorityId;
     @Column(name="name")
@@ -18,11 +19,17 @@ public class RecipePriority {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "recipeId")
     private Set<Recipe> recipes;
 
-    public Long getPriorityId() {
+    public RecipePriority(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public Long getId() {
         return priorityId;
     }
 
-    public void setPriorityId(Long priorityId) {
+    @Override
+    public void setId(Long priorityId) {
         this.priorityId = priorityId;
     }
 

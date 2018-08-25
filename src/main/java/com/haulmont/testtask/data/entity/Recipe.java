@@ -5,9 +5,10 @@ import javax.persistence.*;
 
 @Entity
 @Table(name="recipe")
-public class Recipe {
+public class Recipe implements Identifiable{
 
     @Id
+    @GeneratedValue(strategy=GenerationType.TABLE)
     @Column(name="recipe_id")
     private Long recipeId;
     @Column(name="desc")
@@ -26,11 +27,13 @@ public class Recipe {
     @JoinColumn(name="priority_id", nullable = false)
     private RecipePriority priority;
 
-    public Long getRecipeId() {
+    @Override
+    public Long getId() {
         return recipeId;
     }
 
-    public void setRecipeId(Long recipeId) {
+    @Override
+    public void setId(Long recipeId) {
         this.recipeId = recipeId;
     }
 

@@ -1,128 +1,65 @@
 package com.haulmont.testtask.data;
 
+import com.haulmont.testtask.data.entity.RecipePriority;
+import com.haulmont.testtask.data.entity.Specialization;
 import com.haulmont.testtask.exceptions.MedicamentsSystemException;
+import org.hibernate.Session;
+import org.hibernate.boot.Metadata;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.service.ServiceRegistry;
+import org.hibernate.tool.hbm2ddl.SchemaExport;
+import org.hibernate.tool.schema.TargetType;
+import org.hibernate.tool.schema.spi.SchemaManagementException;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 
 public final class DataBasePreparer extends DAO {
 
-    private static final String TABLE_ALREADY_CREATED_CODE = "42504";
-    private static final int TABLE_COUNT = 5;
+    private final List<String> SPECIALIZATIONS = Arrays.asList("Терапевт", "Хирург", "Дерматолог", "Стоматолог",
+                                                                "Гениколог", "Психиатр", "Окулист", "Невролог");
 
-    private static final String PATIENT_TABLE_CREATE_QUERY = "CREATE TABLE patient " +
-            "(patient_id BIGINT PRIMARY KEY NOT NULL, " +
-            "name VARCHAR(50) NOT NULL," +
-            "family_name VARCHAR(50)," +
-            "second_name VARCHAR(50), " +
-            "phone VARCHAR(16))";
+    private final List<String> RECIPE_PRIORITIES = Arrays.asList("Normalem", "Cito", "Statim");
 
-    private static final String DOCTOR_SPECIALIZATION_TABLE_CREATE_QUERY  = "CREATE TABLE specialization (" +
-            "specialization_id BIGINT PRIMARY KEY NOT NULL," +
-            "name VARCHAR(75) NOT NULL" +
-            ")";
+    private final String configDBFilePath;
 
-    private static final String RECIPE_PRIORITY_TABLE_CREATE_QUERY = "CREATE TABLE recipe_priority (" +
-            "priority_id BIGINT PRIMARY KEY NOT NULL, " +
-            "name VARCHAR(6) NOT NULL" +
-            ")";
-
-    private static final String  DOCTOR_TABLE_CREATE_QUERY = "CREATE TABLE doctor (" +
-            "doctor_id BIGINT PRIMARY KEY NOT NULL, " +
-            "name VARCHAR(50) NOT NULL," +
-            "family_name VARCHAR(50), " +
-            "second_name VARCHAR(50), " +
-            "specialization_id BIGINT REFERENCES specialization(specialization_id)" +
-            ")";
-
-    private static final String RECIPE_TABLE_CREATE_QUERY = "CREATE TABLE recipe (" +
-            "recipe_id BIGINT PRIMARY KEY NOT NULL, " +
-            "desc VARCHAR(300)," +
-            "patient_id BIGINT REFERENCES patient(patient_id), " +
-            "doctor_id BIGINT REFERENCES doctor(doctor_id), " +
-            "start_date DATE NOT NULL, " +
-            "duration SMALLINT, " +
-            "priority_id BIGINT REFERENCES recipe_priority(priority_id)" +
-            ")";
-
-    private final String path;
-
-    public DataBasePreparer(String dbPath) {
-        super(dbPath);
-        this.path = dbPath;
+    public DataBasePreparer(String configDBFilePath) {
+        this.configDBFilePath = configDBFilePath;
     }
 
-    private boolean createTable(String tableQuery) throws MedicamentsSystemException {
-
-        boolean isCreated = true;
-        /*try {
-            connection.createStatement().executeQuery(tableQuery);
-        } catch (SQLException exc) {
-            if (TABLE_ALREADY_CREATED_CODE.equals(exc.getSQLState())) {
-                isCreated = false;
-            } else {
-                exc.printStackTrace();
-                throw new MedicamentsSystemException("Create table exception.");
-            }
-        } finally {
-            connectionClose(connection);
-        }*/
-        return isCreated;
+    private void insertStaticDataInDB() {
+        Session activity = beginActivity();
+        SPECIALIZATIONS.forEach(specializationName -> activity.save(new Specialization(specializationName)));
+        RECIPE_PRIORITIES.forEach(priorityName -> activity.save(new RecipePriority(priorityName)));
+        commit(activity);
     }
 
-    public void createDB() throws MedicamentsSystemException {
-        int createdTableCount = 0;
-        if (createTable(PATIENT_TABLE_CREATE_QUERY)) {
-            createdTableCount++;
-        }
-        if (createTable(DOCTOR_SPECIALIZATION_TABLE_CREATE_QUERY)) {
-            createdTableCount++;
-        }
-        if (createTable(RECIPE_PRIORITY_TABLE_CREATE_QUERY)) {
-            createdTableCount++;
-        }
-        if (createTable(DOCTOR_TABLE_CREATE_QUERY)) {
-            createdTableCount++;
-        }
-        if (createTable(RECIPE_TABLE_CREATE_QUERY)) {
-            createdTableCount++;
-        }
-        if ((createdTableCount > 0)&&(createdTableCount < TABLE_COUNT)) {
-            throw new MedicamentsSystemException("Database has incorrect data.");
-        }
-
-
+    private void createDB() throws SchemaManagementException {
+        ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().configure(this.configDBFilePath).build();
+        Metadata metadata = new MetadataSources(serviceRegistry).getMetadataBuilder().build();
+        SchemaExport export = new SchemaExport();
+        export.setHaltOnError(true);
+        EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.DATABASE, TargetType.STDOUT);
+        SchemaExport.Action action = SchemaExport.Action.CREATE;
+        export.execute(targetTypes, action, metadata);
     }
 
-   /* public void filling() {
-        Connection connection = getSession();
+    /**
+     * Подготавливает базу данных к работе в системе
+     * @throws MedicamentsSystemException
+     */
+    public void prepareDataBase() throws MedicamentsSystemException {
         try {
-            connection.createStatement().executeQuery("INSERT INTO patient(patient_id, name, family_name) values(0,'Николай', 'Складнев')");
-            connection.createStatement().executeQuery("INSERT INTO specialization(specialization_id, name) values(0,'Хирург'),(1, 'Терапевт')");
-            connection.createStatement().executeQuery("INSERT INTO doctor(doctor_id, name, family_name, specialization_id) values(0,'Олег', 'Сонов', 1), (1, 'Кирил', 'Волков', 0)");
-            connection.createStatement().executeQuery("INSERT INTO recipe_priority(priority_id, name) values(0,'normal'), (1, 'high')");
-            connection.createStatement().executeQuery("INSERT INTO recipe(recipe_id, desc, patient_id, doctor_id, start_date, priority_id) values(0,'Что-то от хирурга', 0, 1, '1995-12-19', 1)");
-        } catch (SQLException exc) {
-            exc.printStackTrace();
-        } finally {
-            connectionClose(connection);
+            createDB();
+            insertStaticDataInDB();
+        } catch (SchemaManagementException exc) {
+            System.out.println("Database is already exists.");
         }
     }
 
-    public void show() {
-        Connection connection = getSession();
-        try {
-            ResultSet resultSet = connection.createStatement().executeQuery("Select recipe.desc, doctor.name, recipe.start_date, specialization.name " +
-                    "From doctor join recipe on doctor.doctor_id=recipe.doctor_id join specialization on doctor.specialization_id=specialization.specialization_id");
-            while (resultSet.next()) {
-                System.out.println(resultSet.getString(1) + " " + resultSet.getString(2)+ " "+ resultSet.getString(3) + " " + resultSet.getString(4));
-            }
-
-        } catch (SQLException exc) {
-            exc.printStackTrace();
-        } finally {
-            connectionClose(connection);
-        }
-    }*/
 }

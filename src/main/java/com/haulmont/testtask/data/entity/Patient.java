@@ -6,9 +6,10 @@ import java.util.Set;
 
 @Entity
 @Table(name="patient")
-public class Patient {
+public class Patient implements Identifiable{
 
     @Id
+    @GeneratedValue(strategy=GenerationType.TABLE)
     @Column(name="patient_id")
     private Long patientId;
     @Column(name="name")
@@ -23,11 +24,13 @@ public class Patient {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "recipeId", cascade = CascadeType.REMOVE)
     private Set<Recipe> recipes;
 
-    public Long getPatientId() {
+    @Override
+    public Long getId() {
         return patientId;
     }
 
-    public void setPatientId(Long patientId) {
+    @Override
+    public void setId(Long patientId) {
         this.patientId = patientId;
     }
 
