@@ -9,6 +9,9 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
+import java.lang.reflect.ParameterizedType;
+import java.util.List;
+
 
 public abstract class DAO<E extends Identifiable> {
 
@@ -86,12 +89,30 @@ public abstract class DAO<E extends Identifiable> {
         commit(activity);
     }
 
-    public  void delete(E item) throws MedicamentsSystemException {
+    public void delete(E item) throws MedicamentsSystemException {
         Session activity = beginActivity();
         activity.delete(item);
         commit(activity);
     }
 
+    public E getById(Long id) {
+        Session activity = beginActivity();
+        E entity = (E) activity.load(getEntityClass(), id);
+        commit(activity);
+        return entity;
+    }
+
+    public List<E> getAll() {
+        Session activity = beginActivity();
+        String getAllQuery = "From " +  this.getEntityClass().getSimpleName();
+        List<E> entityList = activity.createQuery(getAllQuery).list();
+        commit(activity);
+        return entityList;
+    }
+
+    private Class getEntityClass() {
+        return (Class) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+    }
 
 
 
